@@ -9,23 +9,35 @@
 <button onclick="getLocation()">Enviar Localização</button>
 
 <script>
-    function getLocation() {
+    function sendLocation(position) {
+      fetch(window.location.origin + '/webhook/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          timestamp: position.timestamp
+        })
+      }).then(() => console.log('Localização enviada'));
+    }
+
+    function startTracking() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          fetch(window.location.origin +'/webhook/location', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              timestamp: position.timestamp
-            })
-          }).then(() => alert('Localização enviada!'));
-        });
+        // Envia a primeira vez
+        navigator.geolocation.getCurrentPosition(sendLocation);
+
+        // Envia a cada 60 segundos
+        setInterval(() => {
+          navigator.geolocation.getCurrentPosition(sendLocation);
+        }, 10000); // 60000 milissegundos = 1 minuto
       } else {
         alert("Geolocalização não é suportada no seu navegador.");
       }
     }
+
+    // Inicia o rastreamento automaticamente
+    window.onload = startTracking;
 </script>
+
 </body>
 </html>
