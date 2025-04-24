@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rastrear Localização</title>
+</head>
+<body>
+<h2>Queremos saber sua localização</h2>
+<button onclick="getLocation()">Enviar Localização</button>
+
+<script>
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          fetch(window.location.origin +'/webhook/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              timestamp: position.timestamp
+            })
+          }).then(() => alert('Localização enviada!'));
+        });
+      } else {
+        alert("Geolocalização não é suportada no seu navegador.");
+      }
+    }
+</script>
+</body>
+</html>
