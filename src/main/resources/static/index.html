@@ -1,21 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <meta charset="UTF-8">
     <title>Rastrear Localização</title>
 </head>
 <body>
 <h2>Queremos saber sua localização</h2>
+<div id="map" style="height: 400px; margin-bottom: 1rem;"></div>
 <button onclick="getLocation()">Enviar Localização</button>
 
 <script>
+    let map;
+    let marker;
+
+    function initMap(lat, lng) {
+      if (!map) {
+        map = L.map('map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        marker = L.marker([lat, lng]).addTo(map);
+      } else {
+        map.setView([lat, lng]);
+        marker.setLatLng([lat, lng]);
+      }
+    }
+
     function sendLocation(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      initMap(lat, lng);
+
       fetch(window.location.origin + '/webhook/location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          latitude: lat,
+          longitude: lng,
           timestamp: position.timestamp
         })
       }).then(() => console.log('Localização enviada'));
@@ -23,19 +50,15 @@
 
     function startTracking() {
       if (navigator.geolocation) {
-        // Envia a primeira vez
         navigator.geolocation.getCurrentPosition(sendLocation);
-
-        // Envia a cada 60 segundos
         setInterval(() => {
           navigator.geolocation.getCurrentPosition(sendLocation);
-        }, 10000); // 60000 milissegundos = 1 minuto
+        }, 60000);
       } else {
         alert("Geolocalização não é suportada no seu navegador.");
       }
     }
 
-    // Inicia o rastreamento automaticamente
     window.onload = startTracking;
 </script>
 
