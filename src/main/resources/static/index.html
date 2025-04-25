@@ -4,29 +4,42 @@
     <meta charset="UTF-8">
     <title>Spotline - Rastreamento</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 1rem; }
         #map { height: 400px; margin-bottom: 1rem; }
-        input, button { margin: 0.5rem; padding: 0.5rem; font-size: 1rem; }
+        input, select, button { margin: 0.5rem; padding: 0.5rem; font-size: 1rem; }
+        #userId { width: 320px; }
     </style>
 </head>
 <body>
 
-<h2>Estamos rastreando sua localização</h2>
+<h2>Spotline - Rastreamento de Localizações</h2>
 
 <div id="map"></div>
 
 <button onclick="getLocation()">📍 Enviar Localização Agora</button>
 
-<h3>🔎 Filtrar Localizações por Período</h3>
-<input type="datetime-local" id="startTime">
-<input type="datetime-local" id="endTime">
+<h3>🔎 Filtrar Localizações</h3>
+
+<select id="userId">
+    <option value="">Carregando usuários...</option>
+</select>
+<br>
+<input id="startTime" placeholder="Início">
+<input id="endTime" placeholder="Fim">
 <button onclick="fetchAndShowLocations()">🔍 Filtrar</button>
 
 <script>
-    let map, marker;
+    let map, marker, polyline;
 
     function getOrCreateUserId() {
       let userId = localStorage.getItem('spotline_user_id');
@@ -57,7 +70,7 @@
 
       initMap(lat, lng);
 
-      fetch('/webhook/location', {
+      fetch('/location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,50 +91,97 @@
     }
 
     function fetchAndShowLocations() {
-      const userId = getOrCreateUserId();
+      const userId = document.getElementById("userId").value.trim();
       const startInput = document.getElementById("startTime").value;
       const endInput = document.getElementById("endTime").value;
 
-      if (!startInput || !endInput) {
-        alert("Por favor, selecione os dois horários.");
+      if (!userId || !startInput || !endInput) {
+        alert("Preencha todos os campos: usuário, início e fim.");
         return;
       }
 
       const start = new Date(startInput).toISOString();
       const end = new Date(endInput).toISOString();
 
-      fetch(`/webhook?userId=${userId}&start=${start}&end=${end}`)
+      fetch(`/location?userId=${userId}&start=${start}&end=${end}`)
         .then(res => res.json())
         .then(data => {
           if (!map) return;
 
-          // limpa marcadores antigos
+          // remove marcadores antigos (exceto o principal)
           map.eachLayer(layer => {
             if (layer instanceof L.Marker && layer !== marker) {
               map.removeLayer(layer);
             }
           });
 
+          // remove polyline anterior, se existir
+          if (polyline) {
+            map.removeLayer(polyline);
+          }
+
+          const points = [];
+
           data.forEach(loc => {
-            L.marker([loc.latitude, loc.longitude]).addTo(map)
+            const coord = [loc.latitude, loc.longitude];
+            points.push(coord);
+            L.marker(coord).addTo(map)
               .bindPopup(`🕒 ${new Date(loc.timestamp).toLocaleString()}`);
           });
+
+          if (points.length > 1) {
+            polyline = L.polyline(points, { color: 'blue' }).addTo(map);
+            map.fitBounds(polyline.getBounds());
+          }
+        });
+    }
+
+    function loadUserIds() {
+      fetch('/location/users')
+        .then(res => res.json())
+        .then(users => {
+          const select = document.getElementById("userId");
+          select.innerHTML = "";
+          users.forEach(id => {
+            const opt = document.createElement("option");
+            opt.value = id;
+            opt.textContent = id;
+            select.appendChild(opt);
+          });
+
+          const localId = getOrCreateUserId();
+          if (users.includes(localId)) {
+            select.value = localId;
+          }
         });
     }
 
     function startTracking() {
       getLocation();
-      setInterval(getLocation, 10000); // envia localização a cada 10 segundos
+      setInterval(getLocation, 10000);
     }
 
     window.onload = () => {
       startTracking();
 
-      // pré-preencher os campos com últimos 10 minutos
       const now = new Date();
       const tenAgo = new Date(now.getTime() - 10 * 60 * 1000);
-      document.getElementById("startTime").value = tenAgo.toISOString().slice(0, 16);
-      document.getElementById("endTime").value = now.toISOString().slice(0, 16);
+
+      flatpickr("#startTime", {
+        enableTime: true,
+        time_24hr: true,
+        defaultDate: tenAgo,
+        dateFormat: "Y-m-d H:i"
+      });
+
+      flatpickr("#endTime", {
+        enableTime: true,
+        time_24hr: true,
+        defaultDate: now,
+        dateFormat: "Y-m-d H:i"
+      });
+
+      loadUserIds();
     };
 </script>
 

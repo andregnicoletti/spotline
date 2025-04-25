@@ -11,12 +11,12 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(value = "/webhook")
+@RequestMapping(value = "/location")
 public class WebhookController {
 
     private final LocationService service;
 
-    @PostMapping("/location")
+    @PostMapping
     public ResponseEntity<Void> location(@RequestBody LocationDTO location) {
         service.save(location);
         return ResponseEntity.ok().build();
@@ -24,13 +24,16 @@ public class WebhookController {
 
 
     @GetMapping
-    public List<LocationDTO> getLocationsByUserAndDateRange(
-            @RequestParam String userId,
-            @RequestParam Instant start,
-            @RequestParam Instant end) {
-
+    public List<LocationDTO> getLocationsByUserAndDateRange(@RequestParam String userId,
+                                                            @RequestParam Instant start,
+                                                            @RequestParam Instant end) {
         return service.getLocationsByUserAndDateRange(userId, start, end);
+    }
 
+    @GetMapping("/users")
+    ResponseEntity<List<String>> getAlluserIds() {
+        List<String> ids = service.listAllUsersId();
+        return ResponseEntity.ok(ids);
     }
 
 }
