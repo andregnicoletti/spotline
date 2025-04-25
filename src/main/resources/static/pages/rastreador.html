@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
-    <title>Rastreamento Ativo - Spotline</title>
+    <meta name="theme-color" content="#007BFF">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreamento Ativo - Spotline</title>
     <style>
         body {
           margin: 0;
@@ -19,6 +21,17 @@
         h2 {
           color: #333;
         }
+        #install-btn {
+          display: none;
+          padding: 10px 20px;
+          font-size: 16px;
+          margin-top: 2rem;
+          background-color: #007BFF;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -27,8 +40,11 @@
 <p>A localização será enviada automaticamente, mesmo se você mudar de aba.</p>
 <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Imagem de rastreamento">
 
+<!-- Botão de instalação do PWA -->
+<button id="install-btn">📲 Instalar Spotline</button>
+
 <script>
-    const INTERVAL_SECONDS = parseInt(window.LOCATION_INTERVAL || 30); // valor padrão = 30 segundos
+    const INTERVAL_SECONDS = parseInt(window.LOCATION_INTERVAL || 30); // padrão: 30s
     let userId = localStorage.getItem('spotline_user_id');
 
     if (!userId) {
@@ -60,17 +76,51 @@
       });
     }
 
-    // Executa ao carregar
+    // Envia ao carregar
     sendLocation();
 
-    // Reenvia a cada N segundos
+    // Envia a cada N segundos
     setInterval(sendLocation, INTERVAL_SECONDS * 1000);
 
-    // Garante que mesmo ao trocar de aba volte a enviar
+    // Reenvia ao voltar para a aba
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         sendLocation();
       }
+    });
+</script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('[SW] Registrado com sucesso!', reg.scope))
+        .catch(err => console.error('[SW] Erro ao registrar:', err));
+    }
+</script>
+
+<script>
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      const installBtn = document.getElementById('install-btn');
+      installBtn.style.display = 'inline-block';
+
+      installBtn.addEventListener('click', () => {
+        installBtn.style.display = 'none';
+        deferredPrompt.prompt();
+
+        deferredPrompt.userChoice.then(choiceResult => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('✅ Usuário instalou o app!');
+          } else {
+            console.log('❌ Usuário recusou a instalação');
+          }
+          deferredPrompt = null;
+        });
+      });
     });
 </script>
 

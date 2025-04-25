@@ -35,13 +35,13 @@ cd spotline
 2. Copie o arquivo de variáveis:
 
 ```bash
-cp env.local env
+cp .env.local .env
 ```
 
 3. Suba tudo com:
 
 ```bash
-docker-compose --env-file env up --build
+docker-compose --.env-file .env up --build
 ```
 
 4. Acesse no navegador:
