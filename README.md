@@ -1,83 +1,106 @@
-# Spotline
+# 📍 Spotline
 
-Spotline é um projeto em Spring Boot com uma página HTML estática para capturar a localização de um usuário via navegador e enviar para um endpoint backend.
+![Java](https://img.shields.io/badge/Java-21-blue?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.5-brightgreen?logo=spring&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+![Render](https://img.shields.io/badge/Deploy-Render-4E5D94?logo=render&logoColor=white)
 
-## Tecnologias
-
-- Java 21 ou superior (projeto usa Java 24)
-- Spring Boot 3.4.5
-- Maven
-- HTML + JavaScript (Geolocation API)
-
-## Como funciona
-
-1. Um HTML é servido automaticamente pela aplicação (`src/main/resources/static/index.html`).
-2. Ao acessar a página, o usuário pode permitir o acesso à sua localização.
-3. A localização é enviada para `POST /webhook/location` com os dados `latitude`, `longitude` e `timestamp`.
+Rastreamento de localização em tempo real via navegador.  
+Construído com **Java + Spring Boot**, persiste localizações com `latitude`, `longitude`, `timestamp` e `userId` único por dispositivo. Ideal para estudo de geolocalização, backends com banco de dados e integração Docker/Render.
 
 ---
 
-## Executar localmente
+## 🚀 Tecnologias
 
-### 1. Clonar o projeto
+- ✅ Java 21
+- ✅ Spring Boot 3.4.5
+- ✅ Spring Data JPA + Hibernate
+- ✅ PostgreSQL
+- ✅ Docker + Docker Compose
+- ✅ Leaflet.js (mapas)
+- ✅ Render (deploy gratuito)
+
+---
+
+## 📦 Rodando localmente com Docker Compose
+
+1. Clone o projeto:
 
 ```bash
-git clone https://github.com/seuusuario/spotline.git
+git clone https://github.com/seu-usuario/spotline.git
 cd spotline
 ```
 
-### 2. Rodar localmente
+2. Copie o arquivo de variáveis:
 
 ```bash
-./mvnw spring-boot:run
+cp .env.local .env
 ```
 
-Acesse: `http://localhost:8080/`
+3. Suba tudo com:
+
+```bash
+docker-compose --env-file .env up --build
+```
+
+4. Acesse no navegador:
+
+```
+http://localhost:8080
+```
+
+A localização será enviada a cada minuto e salva no PostgreSQL.
 
 ---
 
-## Publicar no Render.com
+## 🌍 Deploy gratuito no Render
 
-### 1. Suba seu projeto para o GitHub
+### 1. Suba o projeto no GitHub
+### 2. Crie um serviço Web no [https://render.com](https://render.com)
+- Use o `Dockerfile` da raiz (já configurado com `-DskipTests`)
+- Configure as variáveis de ambiente:
 
-- Certifique-se de que o repositório está no GitHub (pode ser privado ou público).
-
-### 2. Crie um Web Service no Render
-
-- Acesse: [https://render.com](https://render.com)
-- Clique em **New > Web Service**
-- Escolha seu repositório GitHub com o projeto
-
-### 3. Configure o deploy
-
-- **Environment**: Java
-- **Build Command**: `./mvnw clean install`
-- **Start Command**: `java -jar target/spotline-0.0.1-SNAPSHOT.jar`
-- Porta: o Render detecta automaticamente (`8080`)
-
-### 4. Acesse sua aplicação online
-
-Depois do deploy, você receberá um link HTTPS seguro como:
-
-```
-https://spotline.onrender.com
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://<host>:<port>/<database>
+SPRING_DATASOURCE_USERNAME=<user>
+SPRING_DATASOURCE_PASSWORD=<password>
 ```
 
-E o HTML estará acessível direto na raiz:
+Use a aba "Connection Details" do banco PostgreSQL no Render para obter esses valores.
 
-```
-https://spotline.onrender.com/
+---
+
+## 🧭 Identificação Automática
+
+O frontend gera um `userId` único (UUID) por dispositivo usando `localStorage`. Não precisa passar `userId` na URL.
+
+```javascript
+const userId = crypto.randomUUID(); // gerado 1x por navegador
 ```
 
 ---
 
-## Melhorias futuras
+## 🗺️ Visualização de Mapa
 
-- Armazenar localizações recebidas em banco de dados
-- Exibir as localizações em mapa (Leaflet.js, Google Maps)
-- Proteger acesso com autenticação/token
-- Logar IP e user-agent para auditoria
+- A página `index.html` exibe um mapa com a posição atual
+- Mapa renderizado com **Leaflet.js**
+- Atualizações a cada 60 segundos automaticamente
 
 ---
 
-Feito com ❤️ por [André Nicoletti](https://github.com/seuusuario)
+## 🛡️ Segurança e Privacidade
+
+- Nenhuma informação pessoal é coletada
+- Apenas `userId`, coordenadas e timestamp são salvos
+
+---
+
+## 🧑‍💻 Autor
+
+Desenvolvido com dedicação por **André Nicoletti**  
+Contato: [LinkedIn](https://www.linkedin.com/in/seu-usuario)
+
+---
+
+🔥 Powered by Spring Boot • PostgreSQL • Docker • Render

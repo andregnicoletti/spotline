@@ -1,4 +1,8 @@
 package com.nicoletti.spotline.repository;
 
-public class LocationRepository {
+import com.nicoletti.spotline.model.LocationEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface LocationRepository extends JpaRepository<LocationEntity, Long> {
+
 }

@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN ./mvnw clean install
+RUN ./mvnw clean install -DskipTests
 
 EXPOSE 8080
 

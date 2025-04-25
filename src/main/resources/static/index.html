@@ -1,21 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <meta charset="UTF-8">
-    <title>Rastrear Localização</title>
+    <title>Spotline - Rastreamento</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 1rem; }
+        #map { height: 400px; margin-bottom: 1rem; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
 </head>
 <body>
-<h2>Queremos saber sua localização</h2>
-<div id="map" style="height: 400px; margin-bottom: 1rem;"></div>
-<button onclick="getLocation()">Enviar Localização</button>
+
+<h2>Estamos rastreando sua localização</h2>
+<div id="map"></div>
+<button onclick="getLocation()">Enviar Localização Agora</button>
 
 <script>
-    let map;
-    let marker;
+    let map, marker;
+
+    function getOrCreateUserId() {
+      let userId = localStorage.getItem('spotline_user_id');
+      if (!userId) {
+        userId = crypto.randomUUID(); // gera um identificador único
+        localStorage.setItem('spotline_user_id', userId);
+      }
+      return userId;
+    }
 
     function initMap(lat, lng) {
       if (!map) {
@@ -23,7 +36,6 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
-
         marker = L.marker([lat, lng]).addTo(map);
       } else {
         map.setView([lat, lng]);
@@ -34,6 +46,7 @@
     function sendLocation(position) {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
+      const userId = getOrCreateUserId();
 
       initMap(lat, lng);
 
@@ -41,22 +54,25 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          userId,
           latitude: lat,
           longitude: lng,
           timestamp: position.timestamp
         })
-      }).then(() => console.log('Localização enviada'));
+      }).then(() => console.log(`Localização enviada para ${userId}`));
     }
 
-    function startTracking() {
+    function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(sendLocation);
-        setInterval(() => {
-          navigator.geolocation.getCurrentPosition(sendLocation);
-        }, 60000);
       } else {
         alert("Geolocalização não é suportada no seu navegador.");
       }
+    }
+
+    function startTracking() {
+      getLocation();
+      setInterval(getLocation, 10000); // envia a cada 10 segundos
     }
 
     window.onload = startTracking;
