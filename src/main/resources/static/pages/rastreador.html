@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Rastreamento Ativo - Spotline</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+          margin: 0;
+          padding: 2rem;
+          font-family: sans-serif;
+          text-align: center;
+          background-color: #f5f5f5;
+        }
+        img {
+          max-width: 300px;
+          margin-top: 2rem;
+        }
+        h2 {
+          color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Você está sendo rastreado com segurança</h2>
+<p>A localização será enviada automaticamente, mesmo se você mudar de aba.</p>
+<img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Imagem de rastreamento">
+
+<script>
+    const INTERVAL_SECONDS = parseInt(window.LOCATION_INTERVAL || 30); // valor padrão = 30 segundos
+    let userId = localStorage.getItem('spotline_user_id');
+
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem('spotline_user_id', userId);
+    }
+
+    function sendLocation() {
+      if (!navigator.geolocation) {
+        console.warn("Geolocalização não é suportada.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(position => {
+        fetch('/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            timestamp: position.timestamp
+          })
+        }).then(() => {
+          console.log(`[✓] Localização enviada às ${new Date().toLocaleTimeString()}`);
+        }).catch(err => {
+          console.error("Erro ao enviar localização:", err);
+        });
+      });
+    }
+
+    // Executa ao carregar
+    sendLocation();
+
+    // Reenvia a cada N segundos
+    setInterval(sendLocation, INTERVAL_SECONDS * 1000);
+
+    // Garante que mesmo ao trocar de aba volte a enviar
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        sendLocation();
+      }
+    });
+</script>
+
+</body>
+</html>
