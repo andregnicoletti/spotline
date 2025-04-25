@@ -48,4 +48,8 @@ public class LocationService {
                 .toList();
 
     }
+
+    public List<String> listAllUsersId() {
+        return repository.findAllDistinctUserIds();
+    }
 }
