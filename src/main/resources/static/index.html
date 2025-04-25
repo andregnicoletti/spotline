@@ -2,188 +2,43 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Spotline - Rastreamento</title>
+    <title>Spotline - Menu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <!-- Flatpickr -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 1rem; }
-        #map { height: 400px; margin-bottom: 1rem; }
-        input, select, button { margin: 0.5rem; padding: 0.5rem; font-size: 1rem; }
-        #userId { width: 320px; }
+        body {
+          font-family: Arial, sans-serif;
+          background: #f5f5f5;
+          text-align: center;
+          margin: 0;
+          padding: 2rem;
+        }
+        h1 {
+          color: #333;
+        }
+        .btn {
+          display: block;
+          margin: 1rem auto;
+          padding: 1rem 2rem;
+          font-size: 1.2rem;
+          background-color: #007BFF;
+          color: white;
+          text-decoration: none;
+          border-radius: 10px;
+          width: 250px;
+          transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+          background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
 
-<h2>Spotline - Rastreamento de Localizações</h2>
+<h1>Spotline - Sistema de Rastreamento</h1>
 
-<div id="map"></div>
-
-<button onclick="getLocation()">📍 Enviar Localização Agora</button>
-
-<h3>🔎 Filtrar Localizações</h3>
-
-<select id="userId">
-    <option value="">Carregando usuários...</option>
-</select>
-<br>
-<input id="startTime" placeholder="Início">
-<input id="endTime" placeholder="Fim">
-<button onclick="fetchAndShowLocations()">🔍 Filtrar</button>
-
-<script>
-    let map, marker, polyline;
-
-    function getOrCreateUserId() {
-      let userId = localStorage.getItem('spotline_user_id');
-      if (!userId) {
-        userId = crypto.randomUUID();
-        localStorage.setItem('spotline_user_id', userId);
-      }
-      return userId;
-    }
-
-    function initMap(lat, lng) {
-      if (!map) {
-        map = L.map('map').setView([lat, lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        marker = L.marker([lat, lng]).addTo(map);
-      } else {
-        map.setView([lat, lng]);
-        marker.setLatLng([lat, lng]);
-      }
-    }
-
-    function sendLocation(position) {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const userId = getOrCreateUserId();
-
-      initMap(lat, lng);
-
-      fetch('/location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          latitude: lat,
-          longitude: lng,
-          timestamp: position.timestamp
-        })
-      }).then(() => console.log(`📡 Localização enviada para ${userId}`));
-    }
-
-    function getLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(sendLocation);
-      } else {
-        alert("Geolocalização não é suportada no seu navegador.");
-      }
-    }
-
-    function fetchAndShowLocations() {
-      const userId = document.getElementById("userId").value.trim();
-      const startInput = document.getElementById("startTime").value;
-      const endInput = document.getElementById("endTime").value;
-
-      if (!userId || !startInput || !endInput) {
-        alert("Preencha todos os campos: usuário, início e fim.");
-        return;
-      }
-
-      const start = new Date(startInput).toISOString();
-      const end = new Date(endInput).toISOString();
-
-      fetch(`/location?userId=${userId}&start=${start}&end=${end}`)
-        .then(res => res.json())
-        .then(data => {
-          if (!map) return;
-
-          // remove marcadores antigos (exceto o principal)
-          map.eachLayer(layer => {
-            if (layer instanceof L.Marker && layer !== marker) {
-              map.removeLayer(layer);
-            }
-          });
-
-          // remove polyline anterior, se existir
-          if (polyline) {
-            map.removeLayer(polyline);
-          }
-
-          const points = [];
-
-          data.forEach(loc => {
-            const coord = [loc.latitude, loc.longitude];
-            points.push(coord);
-            L.marker(coord).addTo(map)
-              .bindPopup(`🕒 ${new Date(loc.timestamp).toLocaleString()}`);
-          });
-
-          if (points.length > 1) {
-            polyline = L.polyline(points, { color: 'blue' }).addTo(map);
-            map.fitBounds(polyline.getBounds());
-          }
-        });
-    }
-
-    function loadUserIds() {
-      fetch('/location/users')
-        .then(res => res.json())
-        .then(users => {
-          const select = document.getElementById("userId");
-          select.innerHTML = "";
-          users.forEach(id => {
-            const opt = document.createElement("option");
-            opt.value = id;
-            opt.textContent = id;
-            select.appendChild(opt);
-          });
-
-          const localId = getOrCreateUserId();
-          if (users.includes(localId)) {
-            select.value = localId;
-          }
-        });
-    }
-
-    function startTracking() {
-      getLocation();
-      setInterval(getLocation, 10000);
-    }
-
-    window.onload = () => {
-      startTracking();
-
-      const now = new Date();
-      const tenAgo = new Date(now.getTime() - 10 * 60 * 1000);
-
-      flatpickr("#startTime", {
-        enableTime: true,
-        time_24hr: true,
-        defaultDate: tenAgo,
-        dateFormat: "Y-m-d H:i"
-      });
-
-      flatpickr("#endTime", {
-        enableTime: true,
-        time_24hr: true,
-        defaultDate: now,
-        dateFormat: "Y-m-d H:i"
-      });
-
-      loadUserIds();
-    };
-</script>
+<a class="btn" href="/pages/rastreador.html">🚶 Ativar Rastreador</a>
+<a class="btn" href="/pages/painel.html">🗺️ Acessar Painel</a>
 
 </body>
 </html>
