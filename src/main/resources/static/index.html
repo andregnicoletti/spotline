@@ -39,7 +39,7 @@
 <button onclick="fetchAndShowLocations()">🔍 Filtrar</button>
 
 <script>
-    let map, marker;
+    let map, marker, polyline;
 
     function getOrCreateUserId() {
       let userId = localStorage.getItem('spotline_user_id');
@@ -108,17 +108,31 @@
         .then(data => {
           if (!map) return;
 
-          // limpa marcadores antigos
+          // remove marcadores antigos (exceto o principal)
           map.eachLayer(layer => {
             if (layer instanceof L.Marker && layer !== marker) {
               map.removeLayer(layer);
             }
           });
 
+          // remove polyline anterior, se existir
+          if (polyline) {
+            map.removeLayer(polyline);
+          }
+
+          const points = [];
+
           data.forEach(loc => {
-            L.marker([loc.latitude, loc.longitude]).addTo(map)
+            const coord = [loc.latitude, loc.longitude];
+            points.push(coord);
+            L.marker(coord).addTo(map)
               .bindPopup(`🕒 ${new Date(loc.timestamp).toLocaleString()}`);
           });
+
+          if (points.length > 1) {
+            polyline = L.polyline(points, { color: 'blue' }).addTo(map);
+            map.fitBounds(polyline.getBounds());
+          }
         });
     }
 
