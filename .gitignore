@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Sistema
+.DS_Store
+*.log
+
+# Docker
+.env
+docker-compose.override.yml
+
+# Teste e cache
+*.dump
+*.dumpstream
+*.pid
