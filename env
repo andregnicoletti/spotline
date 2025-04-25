@@ -6,4 +6,4 @@ POSTGRES_PASSWORD=postgres
 # Datasource Spring
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
-SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/spotline
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/spotline

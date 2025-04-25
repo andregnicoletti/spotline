@@ -1,11 +1,16 @@
 package com.nicoletti.spotline.dto;
 
-import lombok.Data;
+import com.nicoletti.spotline.model.LocationEntity;
 
-@Data
-public class LocationDTO {
-    private String userId;
-    private double latitude;
-    private double longitude;
-    private long timestamp;
+public record LocationDTO (String userId, Double latitude, Double longitude, Long timestamp) {
+
+    public static LocationDTO from(LocationEntity location) {
+        return new LocationDTO(
+                location.getUserId(),
+                location.getLatitude(),
+                location.getLongitude(),
+                location.getTimestamp().toEpochMilli()
+        );
+    }
+
 }

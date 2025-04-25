@@ -37,7 +37,7 @@ build/
 *.log
 
 # Docker
-.env
+env
 docker-compose.override.yml
 
 # Teste e cache

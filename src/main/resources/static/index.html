@@ -9,14 +9,21 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 1rem; }
         #map { height: 400px; margin-bottom: 1rem; }
-        button { padding: 10px 20px; font-size: 16px; }
+        input, button { margin: 0.5rem; padding: 0.5rem; font-size: 1rem; }
     </style>
 </head>
 <body>
 
 <h2>Estamos rastreando sua localização</h2>
+
 <div id="map"></div>
-<button onclick="getLocation()">Enviar Localização Agora</button>
+
+<button onclick="getLocation()">📍 Enviar Localização Agora</button>
+
+<h3>🔎 Filtrar Localizações por Período</h3>
+<input type="datetime-local" id="startTime">
+<input type="datetime-local" id="endTime">
+<button onclick="fetchAndShowLocations()">🔍 Filtrar</button>
 
 <script>
     let map, marker;
@@ -24,7 +31,7 @@
     function getOrCreateUserId() {
       let userId = localStorage.getItem('spotline_user_id');
       if (!userId) {
-        userId = crypto.randomUUID(); // gera um identificador único
+        userId = crypto.randomUUID();
         localStorage.setItem('spotline_user_id', userId);
       }
       return userId;
@@ -50,7 +57,7 @@
 
       initMap(lat, lng);
 
-      fetch(window.location.origin + '/webhook/location', {
+      fetch('/webhook/location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -59,7 +66,7 @@
           longitude: lng,
           timestamp: position.timestamp
         })
-      }).then(() => console.log(`Localização enviada para ${userId}`));
+      }).then(() => console.log(`📡 Localização enviada para ${userId}`));
     }
 
     function getLocation() {
@@ -70,12 +77,52 @@
       }
     }
 
-    function startTracking() {
-      getLocation();
-      setInterval(getLocation, 10000); // envia a cada 10 segundos
+    function fetchAndShowLocations() {
+      const userId = getOrCreateUserId();
+      const startInput = document.getElementById("startTime").value;
+      const endInput = document.getElementById("endTime").value;
+
+      if (!startInput || !endInput) {
+        alert("Por favor, selecione os dois horários.");
+        return;
+      }
+
+      const start = new Date(startInput).toISOString();
+      const end = new Date(endInput).toISOString();
+
+      fetch(`/webhook?userId=${userId}&start=${start}&end=${end}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!map) return;
+
+          // limpa marcadores antigos
+          map.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer !== marker) {
+              map.removeLayer(layer);
+            }
+          });
+
+          data.forEach(loc => {
+            L.marker([loc.latitude, loc.longitude]).addTo(map)
+              .bindPopup(`🕒 ${new Date(loc.timestamp).toLocaleString()}`);
+          });
+        });
     }
 
-    window.onload = startTracking;
+    function startTracking() {
+      getLocation();
+      setInterval(getLocation, 10000); // envia localização a cada 10 segundos
+    }
+
+    window.onload = () => {
+      startTracking();
+
+      // pré-preencher os campos com últimos 10 minutos
+      const now = new Date();
+      const tenAgo = new Date(now.getTime() - 10 * 60 * 1000);
+      document.getElementById("startTime").value = tenAgo.toISOString().slice(0, 16);
+      document.getElementById("endTime").value = now.toISOString().slice(0, 16);
+    };
 </script>
 
 </body>

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -16,13 +17,35 @@ public class LocationService {
 
     public void save(LocationDTO dto) {
 
-        LocationEntity location = LocationEntity.builder()
-                .userId(dto.getUserId())
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
-                .timestamp(Instant.ofEpochMilli(dto.getTimestamp()))
-                .build();
+        String url = "https://www.google.com/maps/search/?api=1&query=%s,%s";
+        System.out.println(String.format(url, dto.latitude(), dto.longitude()));
 
-        repository.save(location);
+        boolean exists = repository.existsByUserIdAndLatitudeAndLongitudeAndTimestamp(
+                dto.userId(),
+                dto.latitude(),
+                dto.longitude(),
+                Instant.ofEpochMilli(dto.timestamp())
+        );
+
+        if(!exists){
+            LocationEntity location = LocationEntity.builder()
+                    .userId(dto.userId())
+                    .latitude(dto.latitude())
+                    .longitude(dto.longitude())
+                    .timestamp(Instant.ofEpochMilli(dto.timestamp()))
+                    .build();
+
+            repository.save(location);
+        }
+    }
+
+    public List<LocationDTO> getLocationsByUserAndDateRange(String userId, Instant start, Instant end) {
+
+        return repository
+                .findByUserIdAndTimestampBetweenOrderByTimestampAsc(userId, start, end)
+                .stream()
+                .map(LocationDTO::from)
+                .toList();
+
     }
 }
