@@ -99,7 +99,7 @@ const userId = crypto.randomUUID(); // gerado 1x por navegador
 ## 🧑‍💻 Autor
 
 Desenvolvido com dedicação por **André Nicoletti**  
-Contato: [LinkedIn](https://www.linkedin.com/in/seu-usuario)
+Contato: [LinkedIn](https://www.linkedin.com/in/andre-nicoletti)
 
 ---
 
