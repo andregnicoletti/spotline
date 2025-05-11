@@ -28,7 +28,7 @@ Construído com **Java + Spring Boot**, persiste localizações com `latitude`, 
 1. Clone o projeto:
 
 ```bash
-git clone https://github.com/seu-usuario/spotline.git
+git clone https://github.com/andregnicoletti/spotline.git
 cd spotline
 ```
 
